@@ -1,0 +1,23 @@
+{
+  "name": "dawnorg-home",
+  "description": "",
+  "main": "",
+  "authors": [
+    "Jier <naturalwill999@gmail.com>"
+  ],
+  "license": "MIT",
+  "homepage": "",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "public/components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "bootstrap": "^3.3.7",
+    "vue": "^1.0.26"
+  }
+}

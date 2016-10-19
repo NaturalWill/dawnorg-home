@@ -1,0 +1,9 @@
+/vendor
+/node_modules
+/public/storage
+.env
+/.project
+/.buildpath
+/.settings
+/public/components
+/nbproject/private/
