@@ -69,7 +69,7 @@ class Zip {
 	var $error_string = '';
 	var $magic_quotes_status;
 
-	function Zip($p_zipname) {
+	function __construct($p_zipname) {
 		if(!function_exists('gzopen')) {
 			die('Abort '.basename(__FILE__).': Missing zlib extensions');
 		}
@@ -544,15 +544,9 @@ class Zip {
 		if((!function_exists("get_magic_quotes_runtime")) || (!function_exists("set_magic_quotes_runtime"))) {
 			return $v_result;
 		}
-		if($this->magic_quotes_status != -1) {
-			return $v_result;
-		}
+		
+		$this->magic_quotes_status = 0;
 
-		$this->magic_quotes_status = @get_magic_quotes_runtime();
-
-		if($this->magic_quotes_status == 1) {
-			@set_magic_quotes_runtime(0);
-		}
 		return $v_result;
 	}
 
@@ -561,12 +555,7 @@ class Zip {
 		if((!function_exists("get_magic_quotes_runtime")) || (!function_exists("set_magic_quotes_runtime"))) {
 			return $v_result;
 		}
-		if($this->magic_quotes_status != -1) {
-			return $v_result;
-		}
-		if($this->magic_quotes_status == 1) {
-			@set_magic_quotes_runtime($this->magic_quotes_status);
-		}
+		
 		return $v_result;
 	}
 
@@ -696,7 +685,7 @@ class SimpleUnzip {
 
         var $Time = 0;
 
-        function SimpleUnzip($in_FileName = '') {
+        function __construct($in_FileName = '') {
             if($in_FileName !== '') {
                 SimpleUnzip::ReadFile($in_FileName);
             }
@@ -884,7 +873,7 @@ class SimpleUnzip {
                                   ($aP['FD']  & 0x001f),
                                   (($aP['FD'] & 0xfe00) >>  9) + 1980);
 
-                $this->Entries[] = &new SimpleUnzipEntry($aI);
+                $this->Entries[] = new SimpleUnzipEntry($aI);
             } // end for each entries
 
             return $this->Entries;
@@ -904,7 +893,7 @@ class SimpleUnzipEntry {
 
         var $Time = 0;
 
-        function SimpleUnzipEntry($in_Entry) {
+        function __construct($in_Entry) {
 		$this->Data     = $in_Entry['D'];
 		$this->Error    = $in_Entry['E'];
 		$this->ErrorMsg = $in_Entry['EM'];
