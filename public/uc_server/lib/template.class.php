@@ -27,10 +27,6 @@ class template {
 	var $sid;
 
 	function __construct() {
-		$this->template();
-	}
-
-	function template() {
 		ob_start();
 		$this->defaulttpldir = UC_ROOT.'./view/default';
 		$this->tpldir = UC_ROOT.'./view/default';
@@ -74,12 +70,13 @@ class template {
 	function complie() {
 		$template = file_get_contents($this->tplfile);
 		$template = preg_replace("/\<\!\-\-\{(.+?)\}\-\-\>/s", "{\\1}", $template);
-		$template = preg_replace("/\{lang\s+(\w+?)\}/ise", "\$this->lang('\\1')", $template);
+		//$template = preg_replace("/\{lang\s+(\w+?)\}/ise", "\$this->lang('\\1')", $template);
+		$template = preg_replace_callback("/\{lang\s+(\w+?)\}/is", function ($matches){return $this->lang($matches[1]);}, $template);
 
 		$template = preg_replace("/\{($this->var_regexp)\}/", "<?=\\1?>", $template);
 		$template = preg_replace("/\{($this->const_regexp)\}/", "<?=\\1?>", $template);
 		$template = preg_replace("/(?<!\<\?\=|\\\\)$this->var_regexp/", "<?=\\0?>", $template);
-
+/*
 		$template = preg_replace("/\<\?=(\@?\\\$[a-zA-Z_]\w*)((\[[\\$\[\]\w]+\])+)\?\>/ies", "\$this->arrayindex('\\1', '\\2')", $template);
 
 		$template = preg_replace("/\{\{eval (.*?)\}\}/ies", "\$this->stripvtag('<? \\1?>')", $template);
@@ -87,15 +84,30 @@ class template {
 		$template = preg_replace("/\{for (.*?)\}/ies", "\$this->stripvtag('<? for(\\1) {?>')", $template);
 
 		$template = preg_replace("/\{elseif\s+(.+?)\}/ies", "\$this->stripvtag('<? } elseif(\\1) { ?>')", $template);
+*/
 
+		$template = preg_replace_callback("/\<\?=(\@?\\\$[a-zA-Z_]\w*)((\[[\\$\[\]\w]+\])+)\?\>/is", function ($matches){return $this->arrayindex($matches[1], $matches[2]);}, $template);
+		
+		$template = preg_replace_callback("/\{\{eval (.*?)\}\}/is", function ($matches){return $this->stripvtag('<? '.$matches[1].'?>');}, $template);
+		$template = preg_replace_callback("/\{eval (.*?)\}/is", function ($matches){return $this->stripvtag('<? '.$matches[1].'?>');}, $template);
+		$template = preg_replace_callback("/\{for (.*?)\}/is", function ($matches){return $this->stripvtag('<? for('.$matches[1].') {?>');}, $template);
+		
+		$template = preg_replace_callback("/\{elseif\s+(.+?)\}/is", function ($matches){return $this->stripvtag('<? } elseif('.$matches[1].') { ?>');}, $template);
+		
 		for($i=0; $i<2; $i++) {
+			/*
 			$template = preg_replace("/\{loop\s+$this->vtag_regexp\s+$this->vtag_regexp\s+$this->vtag_regexp\}(.+?)\{\/loop\}/ies", "\$this->loopsection('\\1', '\\2', '\\3', '\\4')", $template);
 			$template = preg_replace("/\{loop\s+$this->vtag_regexp\s+$this->vtag_regexp\}(.+?)\{\/loop\}/ies", "\$this->loopsection('\\1', '', '\\2', '\\3')", $template);
+			*/
+			$template = preg_replace_callback("/\{loop\s+$this->vtag_regexp\s+$this->vtag_regexp\s+$this->vtag_regexp\}(.+?)\{\/loop\}/is", function ($matches){return $this->loopsection($matches[1], $matches[2],$matches[3], $matches[4]);}, $template);
+			$template = preg_replace_callback("/\{loop\s+$this->vtag_regexp\s+$this->vtag_regexp\}(.+?)\{\/loop\}/is", function ($matches){return $this->loopsection($matches[1], '', $matches[2], $matches[3]);}, $template);
 		}
-		$template = preg_replace("/\{if\s+(.+?)\}/ies", "\$this->stripvtag('<? if(\\1) { ?>')", $template);
-
+		/*$template = preg_replace("/\{if\s+(.+?)\}/ies", "\$this->stripvtag('<? if(\\1) { ?>')", $template);*/
+		$template = preg_replace_callback("/\{if\s+(.+?)\}/is", function ($matches){return $this->stripvtag('<? if('.$matches[1].') { ?>');}, $template);
+		
 		$template = preg_replace("/\{template\s+(\w+?)\}/is", "<? include \$this->gettpl('\\1');?>", $template);
-		$template = preg_replace("/\{template\s+(.+?)\}/ise", "\$this->stripvtag('<? include \$this->gettpl(\\1); ?>')", $template);
+		/*$template = preg_replace("/\{template\s+(.+?)\}/ise", "\$this->stripvtag('<? include \$this->gettpl(\\1); ?>')", $template);*/
+		$template = preg_replace_callback("/\{template\s+(.+?)\}/is", function ($matches){return $this->stripvtag('<? include \$this->gettpl('.$matches[1].'); ?>');}, $template);
 
 
 		$template = preg_replace("/\{else\}/is", "<? } else { ?>", $template);
@@ -157,14 +169,20 @@ class template {
 		}
 		$sid = rawurlencode($this->sid);
 		$searcharray = array(
-			"/\<a(\s*[^\>]+\s*)href\=([\"|\']?)([^\"\'\s]+)/ies",
+			"/\<a(\s*[^\>]+\s*)href\=([\"|\']?)([^\"\'\s]+)/is",
 			"/(\<form.+?\>)/is"
 		);
 		$replacearray = array(
 			"\$this->_transsid('\\3','<a\\1href=\\2')",
 			"\\1\n<input type=\"hidden\" name=\"sid\" value=\"".rawurldecode(rawurldecode(rawurldecode($sid)))."\" />"
 		);
-		$content = preg_replace($searcharray, $replacearray, ob_get_contents());
+		
+		$content = ob_get_contents();
+		$content=preg_replace_callback($searcharray[0], function ($matches){
+			return $this->_transsid($matches[3], "<a$matches[1]href=$matches[2]");
+		}, $content);
+		$content=preg_replace($searcharray[1], $replacearray[1], $content);
+
 		ob_end_clean();
 		echo $content;
 	}
